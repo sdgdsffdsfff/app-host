@@ -16,13 +16,21 @@ module PkgAdapter
           #   # content = entry.get_input_stream.read if entry.get_input_stream.respond_to? :read
           # end
 
-          provision = zip_file.glob('Payload/*.app/embedded.mobileprovision').first
+          provision = zip_file.glob("Payload/*.app/embedded.mobileprovision").first
           @provision = provision ? ConfigParser.mobileprovision(provision.get_input_stream.read) : {}
-
-          plist = zip_file.glob('Payload/*.app/Info.plist').first
+          
+          plist = zip_file.glob("Payload/*.app/Info.plist").first
           @plist = plist ? ConfigParser.plist(plist.get_input_stream.read) : {}
 
-          entry = zip_file.glob('Payload/*.app/AppIcon[6,4]0x[6,4]0@*.png').last
+          # read icon name
+          if @plist["CFBundleIcons"]
+            app_icon_name = @plist["CFBundleIcons"]["CFBundlePrimaryIcon"]["CFBundleIconName"]  
+          else
+            app_icon_name = @plist["CFBundleIcons~ipad"]["CFBundlePrimaryIcon"]["CFBundleIconName"]
+          end
+
+          entry = zip_file.glob("Payload/*.app/#{app_icon_name}[6,4]0x[6,4]0@*.png").last
+          
           if entry
             @app_icon = "#{path}/#{entry.name}"
             dirname = File.dirname(@app_icon)
